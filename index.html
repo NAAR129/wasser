@@ -244,6 +244,11 @@
       color:var(--muted);
       font-weight:900;
       font-size:15px;
+      min-height:22px;
+    }
+
+    .value.hiddenValue{
+      visibility:hidden;
     }
 
     input[type="range"]{
@@ -315,6 +320,7 @@
       font-size:17px;
       color:var(--blue-4);
       font-weight:900;
+      min-height:24px;
     }
 
     .info2{
@@ -322,6 +328,7 @@
       font-size:19px;
       font-weight:900;
       color:var(--title);
+      min-height:28px;
     }
 
     .challengeBox{
@@ -333,6 +340,7 @@
       color:#294d70;
       font-weight:800;
       display:none;
+      min-height:96px;
     }
 
     .challengeBox.show{
@@ -344,6 +352,7 @@
       font-size:19px;
       font-weight:900;
       color:var(--green);
+      min-height:24px;
     }
 
     .footerAuthor{
@@ -418,7 +427,7 @@
     <div class="controls" id="controls">
       <div class="controlBlock">
         <div class="row">
-          <label for="widthSlider">Breite des Gefäßes</label>
+          <label for="widthSlider">Radius des Gefäßes</label>
           <input id="widthSlider" type="range" min="2.2" max="5.5" step="0.1" value="3.0">
           <span class="value" id="widthValue">3.0 cm</span>
         </div>
@@ -432,14 +441,14 @@
         <div class="row">
           <label for="initialHeight">Anfangshöhe</label>
           <input id="initialHeight" type="number" min="0" max="18" step="0.1" value="0">
-          <span class="value">cm</span>
+          <span class="value" id="initialHeightUnit">cm</span>
         </div>
 
-        <div class="info" id="timeInfo">Zeit = 0.0 s</div>
-        <div class="info2" id="heightInfo">Wasserhöhe = 0.0 cm</div>
+        <div class="info" id="timeInfo"></div>
+        <div class="info2" id="heightInfo"></div>
 
         <div class="challengeBox" id="challengeBox">
-          <div id="challengeText">Aktuelle Aufgabe</div>
+          <div id="challengeText"></div>
           <div class="score" id="scoreText"></div>
         </div>
       </div>
@@ -475,6 +484,7 @@
           <label><input id="showPoints" type="checkbox" checked> Punkte</label>
           <label><input id="showLine" type="checkbox" checked> Kurve</label>
           <label><input id="showGuides" type="checkbox" checked> Hilfslinien</label>
+          <label><input id="showNumbers" type="checkbox"> Zahlen anzeigen</label>
         </div>
       </div>
     </div>
@@ -527,31 +537,100 @@
 
     const CHALLENGES = [
       {
-        name: "Aufgabe 1",
+        name: "",
+        H: 10.5,
+        width: 3.1,
+        profile(h, H, w){ return w; }
+      },
+      {
+        name: "",
         H: 10.5,
         width: 3.1,
         profile(h, H, w){
-          const u = h / H;
+          const u = h / Math.max(H, 0.0001);
           return w * (0.20 + 0.80 * u);
         }
       },
       {
-        name: "Aufgabe 2",
+        name: "",
         H: 10.5,
         width: 3.3,
         profile(h, H, w){
-          const u = h / H;
+          const u = h / Math.max(H, 0.0001);
           return w * (1.00 - 0.42 * u);
         }
       },
       {
-        name: "Aufgabe 3",
+        name: "",
         H: 10.5,
         width: 3.0,
         profile(h, H, w){
-          const u = h / H;
+          const u = h / Math.max(H, 0.0001);
           const bulb = 0.36 + 0.78 * Math.sin(Math.PI * u) ** 0.95;
           return w * Math.max(0.22, bulb);
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.0,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          const neck = 0.55 + 0.30 * Math.sin(Math.PI * u) - 0.22 * u;
+          return w * Math.max(0.18, neck);
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.2,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          const belly = 0.30 + 0.95 * Math.sin(Math.PI * u) ** 1.4;
+          const topTaper = 1.00 - 0.28 * u;
+          return w * Math.max(0.18, belly * topTaper);
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.3,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          if (u < 0.30) return w * (1.10 - 0.15 * (u / 0.30));
+          if (u < 0.75) return w * 0.95;
+          return w * (0.95 - 0.45 * ((u - 0.75) / 0.25));
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.0,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          const waist = 0.95 - 0.48 * Math.sin(Math.PI * u) ** 2;
+          return w * Math.max(0.22, waist);
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.1,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          if (u < 0.45) return w * (0.55 + 0.10 * (u / 0.45));
+          return w * (0.65 + 0.55 * ((u - 0.45) / 0.55));
+        }
+      },
+      {
+        name: "",
+        H: 10.5,
+        width: 3.1,
+        profile(h, H, w){
+          const u = h / Math.max(H, 0.0001);
+          const baseCurve = 0.22 + 0.95 * Math.sqrt(u);
+          const topSoft = 1.00 - 0.10 * u;
+          return w * Math.max(0.18, baseCurve * topSoft);
         }
       }
     ];
@@ -571,6 +650,7 @@
       rafId: null,
       lastTs: null,
       pointAccum: 0,
+      showNumbers: false,
 
       customProfileReady: false,
       customRadiiBaseCm: [],
@@ -621,6 +701,7 @@
       heightMaxValue: document.getElementById("heightMaxValue"),
       flowValue: document.getElementById("flowValue"),
       speedValue: document.getElementById("speedValue"),
+      initialHeightUnit: document.getElementById("initialHeightUnit"),
 
       timeInfo: document.getElementById("timeInfo"),
       heightInfo: document.getElementById("heightInfo"),
@@ -632,6 +713,7 @@
       showPoints: document.getElementById("showPoints"),
       showLine: document.getElementById("showLine"),
       showGuides: document.getElementById("showGuides"),
+      showNumbers: document.getElementById("showNumbers"),
 
       startBtn: document.getElementById("startBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
@@ -676,6 +758,12 @@
       return Math.max(a, Math.min(b, v));
     }
 
+    function formatSmart(v){
+      if (Math.abs(v) >= 100) return v.toFixed(1);
+      if (Math.abs(v) >= 10) return v.toFixed(1);
+      return v.toFixed(2);
+    }
+
     function smoothArray(arr, passes = 3){
       let out = arr.slice();
       for (let p = 0; p < passes; p++) {
@@ -699,6 +787,11 @@
       return RIGHT.plotBottom - (h / H) * usable;
     }
 
+    function majorStepY(){
+      if (state.H > 16) return 3;
+      if (state.H > 12) return 2;
+      return 1;
+    }
     function majorStepY(){
       if (state.H > 16) return 3;
       if (state.H > 12) return 2;
@@ -757,28 +850,24 @@
       return Math.PI * r * r;
     }
 
-    function volumeAtHeight(h){
+    function integrateVolumeUntilHeight(h, areaFn){
       if (h <= 0) return 0;
-      const steps = 220;
+      const steps = 2400;
       const dh = h / steps;
       let volume = 0;
       for (let i = 0; i < steps; i++) {
         const hMid = (i + 0.5) * dh;
-        volume += areaAtH(hMid) * dh;
+        volume += areaFn(hMid) * dh;
       }
       return volume;
     }
 
+    function volumeAtHeight(h){
+      return integrateVolumeUntilHeight(h, areaAtH);
+    }
+
     function targetVolumeAtHeight(h){
-      if (h <= 0) return 0;
-      const steps = 220;
-      const dh = h / steps;
-      let volume = 0;
-      for (let i = 0; i < steps; i++) {
-        const hMid = (i + 0.5) * dh;
-        volume += targetAreaAtH(hMid) * dh;
-      }
-      return volume;
+      return integrateVolumeUntilHeight(h, targetAreaAtH);
     }
 
     function totalVolume(){
@@ -790,7 +879,11 @@
     }
 
     function estimateFillTime(){
-      return Math.max(4, (totalVolume() - volumeAtHeight(state.h0)) / Math.max(state.Q, 0.0001));
+      return Math.max(0, (totalVolume() - volumeAtHeight(state.h0)) / Math.max(state.Q, 0.0001));
+    }
+
+    function targetEstimateFillTime(){
+      return Math.max(0, targetTotalVolume() / Math.max(state.Q, 0.0001));
     }
 
     function challengeFillHistory(){
@@ -798,34 +891,55 @@
       const history = [];
       let t = 0;
       let h = 0;
-      const dt = 0.05;
+      const dt = 0.01;
       history.push({ t:0, h:0 });
-      while (h < state.H - 1e-6 && t < 200) {
-        const A = targetAreaAtH(h);
-        h = Math.min(state.H, h + (state.Q / Math.max(A, 0.02)) * dt);
-        t += dt;
+
+      while (h < state.H - 1e-8 && t < 400) {
+        for (let i = 0; i < 8; i++) {
+          const A = targetAreaAtH(h);
+          h = Math.min(state.H, h + (state.Q / Math.max(A, 0.0001)) * (dt / 8));
+          t += dt / 8;
+        }
         history.push({ t, h });
       }
       return history;
     }
 
-    function graphXMax(){
+    function timeAxisMaxExact(){
       if (state.shape === "reconstruct") {
-        const hist = challengeFillHistory();
-        if (state.graphMode === "timeHeight") {
-          return Math.max(12, Math.ceil((hist[hist.length - 1]?.t || 12) * 1.12));
-        }
-        return Math.max(50, Math.ceil(targetTotalVolume() * 1.12));
+        return Math.max(targetEstimateFillTime(), 1);
       }
+      return Math.max(estimateFillTime(), 1);
+    }
 
-      if (state.graphMode === "timeHeight") {
-        return Math.max(12, Math.min(120, Math.ceil(estimateFillTime() * 1.20)));
+    function volumeAxisMaxExact(){
+      if (state.shape === "reconstruct") {
+        return Math.max(targetTotalVolume(), 1);
       }
-      return Math.max(50, Math.ceil(totalVolume() * 1.12));
+      return Math.max(totalVolume(), 1);
+    }
+
+    function nextMultiple(value, step){
+      return Math.max(step, Math.ceil(value / step) * step);
+    }
+
+    function graphXMax(){
+      if (state.graphMode === "timeHeight") {
+        return nextMultiple(timeAxisMaxExact(), 1);
+      }
+      return nextMultiple(volumeAxisMaxExact(), 50);
+    }
+
+    function getXTicks(){
+      const xMax = graphXMax();
+      const step = state.graphMode === "timeHeight" ? 1 : 50;
+      const ticks = [];
+      for (let v = 0; v <= xMax + 1e-9; v += step) ticks.push(v);
+      return ticks;
     }
 
     function graphXFromValue(xValue){
-      const xMax = graphXMax();
+      const xMax = Math.max(graphXMax(), 0.0001);
       const usable = RIGHT.svgW - RIGHT.plotLeft - RIGHT.plotRight;
       return RIGHT.plotLeft + (xValue / xMax) * usable;
     }
@@ -851,7 +965,7 @@
       return targetRadiusCm(h) / maxCm * maxPx;
     }
 
-    function pointsForWall(samples = 64){
+    function pointsForWall(samples = 80){
       const left = [];
       const right = [];
       for (let i = 0; i <= samples; i++) {
@@ -864,7 +978,7 @@
       return { left, right };
     }
 
-    function pointsForTargetWall(samples = 64){
+    function pointsForTargetWall(samples = 80){
       const left = [];
       const right = [];
       for (let i = 0; i <= samples; i++) {
@@ -890,7 +1004,7 @@
       return all.join(" ");
     }
 
-    function waterPolygonUpToHeight(hFill, samples = 60){
+    function waterPolygonUpToHeight(hFill, samples = 80){
       const left = [];
       const right = [];
       for (let i = 0; i <= samples; i++) {
@@ -996,7 +1110,7 @@
           "stroke-linecap": "round"
         }));
 
-        if (isMajor) {
+        if (isMajor && state.showNumbers) {
           svg.appendChild(S("text", {
             x: x + 49, y: y + 5,
             fill: "#334b61", "font-size": "16",
@@ -1007,6 +1121,8 @@
     }
 
     function drawHeightChip(svg){
+      if (!state.showNumbers) return;
+
       const y = 602;
       const x = 112;
       const text = `h = ${state.h.toFixed(1)} cm`;
@@ -1035,7 +1151,7 @@
       }));
 
       UI.leftSvg.appendChild(S("rect", {
-        x: 34, y: 74, width: 270, height: 84, rx: 16,
+        x: 34, y: 74, width: 300, height: 84, rx: 16,
         fill: "rgba(255,255,255,.82)",
         stroke: "#dbe7f5", "stroke-width": "1.2"
       }));
@@ -1048,7 +1164,7 @@
       UI.leftSvg.appendChild(S("text", {
         x: 48, y: 121, fill: "#58718b",
         "font-size": "14", "font-weight": "800"
-      }, "Zeichne das passende Gefäß und klicke dann auf „Vergleichen“."));
+      }, "Zeichne das passende Gefäß und klicke auf „Vergleichen“."));
     }
 
     function drawEmptyUserStage(){
@@ -1068,7 +1184,7 @@
       }));
 
       UI.leftSvg.appendChild(S("rect", {
-        x: 34, y: 74, width: 260, height: 70, rx: 16,
+        x: 34, y: 74, width: 290, height: 70, rx: 16,
         fill: "rgba(255,255,255,.82)",
         stroke: "#dbe7f5", "stroke-width": "1.2"
       }));
@@ -1083,7 +1199,7 @@
         x: 48, y: 121,
         fill: "#6d5ef5", "font-size": "13",
         "font-weight": "900"
-      }, "Klicke danach auf „Gefäß übernehmen“."));
+      }, "Danach klicke auf „Gefäß übernehmen“."));
     }
 
     function drawCorrectTargetOutline(svg){
@@ -1184,24 +1300,61 @@
     }
 
     function drawGrid(){
-      const xMax = graphXMax();
+      const xTicks = getXTicks();
 
-      for (let i = 0; i <= 10; i++) {
-        const xVal = (i / 10) * xMax;
+      xTicks.forEach(xVal => {
         UI.rightSvg.appendChild(S("line", {
           x1: graphXFromValue(xVal), x2: graphXFromValue(xVal),
           y1: RIGHT.plotTop, y2: RIGHT.plotBottom,
           stroke: "rgba(75,105,140,.10)", "stroke-width": "1"
         }));
-      }
+      });
 
-      for (let v = 0; v <= state.H + 0.0001; v += 1) {
+      for (let v = 0; v <= state.H + 0.0001; v += state.H / 10) {
         UI.rightSvg.appendChild(S("line", {
           x1: RIGHT.plotLeft, x2: RIGHT.svgW - RIGHT.plotRight,
           y1: chartYFromH(v), y2: chartYFromH(v),
           stroke: "rgba(75,105,140,.10)", "stroke-width": "1"
         }));
       }
+    }
+
+    function drawPointCoordinates(cx, cy, xValue, yValue){
+      if (!state.showNumbers) return;
+      if (state.running) return;
+
+      const text = `(${formatSmart(xValue)}, ${formatSmart(yValue)})`;
+      const boxWidth = Math.max(120, 12 + text.length * 7.2);
+      const boxHeight = 34;
+
+      let boxX = cx + 12;
+      let boxY = cy - 42;
+
+      if (boxX + boxWidth > RIGHT.svgW - RIGHT.plotRight) {
+        boxX = cx - boxWidth - 12;
+      }
+      if (boxY < RIGHT.plotTop) {
+        boxY = cy + 12;
+      }
+
+      UI.rightSvg.appendChild(S("rect", {
+        x: boxX,
+        y: boxY,
+        width: boxWidth,
+        height: boxHeight,
+        rx: 10,
+        fill: "rgba(255,255,255,.97)",
+        stroke: "#cfe0f2",
+        "stroke-width": "1.2"
+      }));
+
+      UI.rightSvg.appendChild(S("text", {
+        x: boxX + 10,
+        y: boxY + 22,
+        fill: "#23476b",
+        "font-size": "13",
+        "font-weight": "800"
+      }, text));
     }
 
     function drawRight(){
@@ -1215,8 +1368,6 @@
         rx: 22, fill: "url(#graphCardFill)",
         stroke: "#dbe7f1", "stroke-width": "1.2"
       }));
-
-      const xMax = graphXMax();
 
       if (UI.showGuides.checked) drawGrid();
 
@@ -1246,24 +1397,26 @@
         "font-weight": "900", "text-anchor": "end"
       }, xAxisLabel));
 
-      for (let i = 0; i <= 10; i++) {
-        const xVal = (i / 10) * xMax;
-        UI.rightSvg.appendChild(S("text", {
-          x: graphXFromValue(xVal),
-          y: RIGHT.plotBottom + 30,
-          fill: "#556e85", "font-size": "14",
-          "text-anchor": "middle", "font-weight": "700"
-        }, String(Math.round(xVal))));
-      }
+      if (state.showNumbers) {
+        const xTicks = getXTicks();
+        xTicks.forEach(xVal => {
+          UI.rightSvg.appendChild(S("text", {
+            x: graphXFromValue(xVal),
+            y: RIGHT.plotBottom + 30,
+            fill: "#556e85", "font-size": "14",
+            "text-anchor": "middle", "font-weight": "700"
+          }, String(xVal)));
+        });
 
-      const step = majorStepY();
-      for (let v = 0; v <= state.H + 0.0001; v += step) {
-        UI.rightSvg.appendChild(S("text", {
-          x: RIGHT.plotLeft - 16,
-          y: chartYFromH(v) + 5,
-          fill: "#556e85", "font-size": "15",
-          "text-anchor": "end", "font-weight": "800"
-        }, Number.isInteger(v) ? String(v) : v.toFixed(1)));
+        const yStep = majorStepY();
+        for (let v = 0; v <= state.H + 0.0001; v += yStep) {
+          UI.rightSvg.appendChild(S("text", {
+            x: RIGHT.plotLeft - 16,
+            y: chartYFromH(v) + 5,
+            fill: "#556e85", "font-size": "15",
+            "text-anchor": "end", "font-weight": "800"
+          }, Number.isInteger(v) ? String(v) : v.toFixed(1)));
+        }
       }
 
       let series = state.history;
@@ -1297,7 +1450,7 @@
           UI.rightSvg.appendChild(S("circle", {
             cx: graphXFromValue(graphXValueFromPoint(p)),
             cy: chartYFromH(p.h),
-            r: "3.4",
+            r: "3.2",
             fill: "#2f87eb"
           }));
         });
@@ -1305,8 +1458,10 @@
 
       const last = state.shape === "reconstruct" ? null : state.history[state.history.length - 1];
       if (last) {
-        const cx = graphXFromValue(graphXValueFromPoint(last));
-        const cy = chartYFromH(last.h);
+        const xValue = graphXValueFromPoint(last);
+        const yValue = last.h;
+        const cx = graphXFromValue(xValue);
+        const cy = chartYFromH(yValue);
 
         if (UI.showGuides.checked) {
           UI.rightSvg.appendChild(S("line", {
@@ -1340,6 +1495,8 @@
           cx, cy, r: "5.4",
           fill: "#2f87eb"
         }));
+
+        drawPointCoordinates(cx, cy, xValue, yValue);
       }
     }
 
@@ -1474,6 +1631,10 @@
       }
     }
 
+    function toggleValueVisibility(el, show){
+      el.classList.toggle("hiddenValue", !show);
+    }
+
     function updateDrawUI(){
       const show = isUserDrawMode();
       UI.drawTools.classList.toggle("show", show);
@@ -1487,7 +1648,7 @@
       UI.showSolutionBtn.style.display = state.shape === "reconstruct" ? "inline-block" : "none";
       UI.newChallengeBtn.style.display = state.shape === "reconstruct" ? "inline-block" : "none";
 
-      UI.controls.classList.toggle("hidden", state.shape === "reconstruct");
+      UI.controls.classList.toggle("hidden", false);
 
       if (show) resizeDrawCanvas();
       else redrawCanvas();
@@ -1561,7 +1722,7 @@
         return false;
       }
 
-      const bands = 160;
+      const bands = 180;
       const halfWidthsPx = [];
 
       for (let i = 0; i < bands; i++) {
@@ -1649,7 +1810,7 @@
       if (state.shape !== "reconstruct") return;
       if (!fitProfileFromDrawing()) return;
 
-      const samples = 120;
+      const samples = 160;
       let relErr = 0;
 
       for (let i = 0; i <= samples; i++) {
@@ -1671,254 +1832,278 @@
       refreshAll();
     }
 
-    function loadChallenge(idx = null){
-      if (idx == null) idx = Math.floor(Math.random() * CHALLENGES.length);
-      const ch = CHALLENGES[idx];
+function loadChallenge(idx = null){
+  if (idx == null) idx = Math.floor(Math.random() * CHALLENGES.length);
+  const ch = CHALLENGES[idx];
 
-      state.challenge.index = idx;
-      state.challenge.profile = ch.profile;
-      state.challenge.score = null;
-      state.challenge.showSolution = false;
+  state.challenge.index = idx;
+  state.challenge.profile = ch.profile;
+  state.challenge.score = null;
+  state.challenge.showSolution = false;
 
-      state.H = ch.H;
-      state.width = ch.width;
-      UI.heightSlider.value = String(ch.H);
-      UI.widthSlider.value = String(ch.width);
-      UI.showSolutionBtn.textContent = "Richtiges Gefäß zeigen";
+  state.H = ch.H;
+  state.width = ch.width;
+  UI.heightSlider.value = String(ch.H);
+  UI.widthSlider.value = String(ch.width);
+  UI.showSolutionBtn.textContent = "Richtiges Gefäß zeigen";
 
-      state.h0 = 0;
-      state.h = 0;
-      state.t = 0;
-      state.history = [{ t: 0, h: 0 }];
-      state.customProfileReady = false;
-      state.customRadiiBaseCm = [];
-      state.customRadiiCm = [];
-      state.customWidthCm = null;
-      state.customBaseMaxRadiusCm = null;
-      state.customVisualMaxRadiusCm = null;
-      state.draw.points = [];
-      state.draw.enabled = true;
+  state.h0 = 0;
+  state.h = 0;
+  state.t = 0;
+  state.history = [{ t: 0, h: 0 }];
+  state.customProfileReady = false;
+  state.customRadiiBaseCm = [];
+  state.customRadiiCm = [];
+  state.customWidthCm = null;
+  state.customBaseMaxRadiusCm = null;
+  state.customVisualMaxRadiusCm = null;
+  state.draw.points = [];
+  state.draw.enabled = true;
 
-      pauseSimulation();
-      refreshAll();
-    }
+  pauseSimulation();
+  refreshAll();
+}
 
-    function refreshTexts(){
-      UI.widthValue.textContent = state.width.toFixed(1) + " cm";
-      UI.heightMaxValue.textContent = state.H.toFixed(1) + " cm";
-      UI.flowValue.textContent = state.Q.toFixed(0) + " mL/s";
-      UI.speedValue.textContent = state.animSpeed.toFixed(2) + "×";
-      UI.timeInfo.textContent = "Zeit = " + state.t.toFixed(1) + " s";
-      UI.heightInfo.textContent = "Wasserhöhe = " + state.h.toFixed(1) + " cm";
+function refreshTexts(){
+  UI.widthValue.textContent = state.width.toFixed(1) + " cm";
+  UI.heightMaxValue.textContent = state.H.toFixed(1) + " cm";
+  UI.flowValue.textContent = state.Q.toFixed(0) + " mL/s";
+  UI.speedValue.textContent = state.animSpeed.toFixed(2) + "×";
+  UI.timeInfo.textContent = state.showNumbers ? "Zeit = " + state.t.toFixed(2) + " s" : "";
+  UI.heightInfo.textContent = state.showNumbers ? "Wasserhöhe = " + state.h.toFixed(2) + " cm" : "";
 
-      const showChallenge = state.shape === "reconstruct";
-      UI.challengeBox.classList.toggle("show", showChallenge);
+  toggleValueVisibility(UI.widthValue, state.showNumbers);
+  toggleValueVisibility(UI.heightMaxValue, state.showNumbers);
+  toggleValueVisibility(UI.flowValue, state.showNumbers);
+  toggleValueVisibility(UI.speedValue, state.showNumbers);
+  toggleValueVisibility(UI.initialHeightUnit, state.showNumbers);
 
-      if (showChallenge) {
-        UI.challengeText.textContent = CHALLENGES[state.challenge.index].name;
-        UI.scoreText.textContent = state.challenge.score == null ? "" : `Punkte: ${state.challenge.score}/100`;
-      }
-    }
+  const showChallenge = state.shape === "reconstruct";
+  UI.challengeBox.classList.toggle("show", showChallenge);
 
-    function refreshAll(){
-      refreshTexts();
-      drawLeft();
-      drawRight();
-      drawOverlayGuide();
-      updateDrawUI();
-    }
+  if (showChallenge) {
+    UI.challengeText.textContent = "";
+    UI.scoreText.textContent = state.showNumbers && state.challenge.score != null
+      ? `Punkte: ${state.challenge.score}/100`
+      : "";
+  } else {
+    UI.challengeText.textContent = "";
+    UI.scoreText.textContent = "";
+  }
+}
 
-    function applyInputs(){
-      state.width = parseFloat(UI.widthSlider.value);
-      state.H = parseFloat(UI.heightSlider.value);
-      state.h0 = Math.min(parseFloat(UI.initialHeight.value) || 0, state.H);
-      state.Q = parseFloat(UI.flowSlider.value);
-      state.animSpeed = parseFloat(UI.speedSlider.value);
-      state.graphMode = UI.graphMode.value;
+function refreshAll(){
+  refreshTexts();
+  drawLeft();
+  drawRight();
+  drawOverlayGuide();
+  updateDrawUI();
+}
 
-      if ((state.shape === "custom" || state.shape === "reconstruct") && state.customProfileReady) {
-        rebuildCustomProfileFromWidth();
-      }
+function applyInputs(){
+  state.width = parseFloat(UI.widthSlider.value);
+  state.H = parseFloat(UI.heightSlider.value);
+  state.h0 = Math.min(parseFloat(UI.initialHeight.value) || 0, state.H);
+  state.Q = parseFloat(UI.flowSlider.value);
+  state.animSpeed = parseFloat(UI.speedSlider.value);
+  state.graphMode = UI.graphMode.value;
+  state.showNumbers = UI.showNumbers.checked;
 
-      UI.initialHeight.max = String(state.H);
+  if ((state.shape === "custom" || state.shape === "reconstruct") && state.customProfileReady) {
+    rebuildCustomProfileFromWidth();
+  }
 
-      if (!state.running && state.t === 0 && state.shape !== "reconstruct") {
-        state.h = state.h0;
-        state.history = [{ t: 0, h: state.h0 }];
-      } else if (state.shape !== "reconstruct") {
-        state.h = Math.min(state.H, state.h);
-        state.history = state.history.map(p => ({
-          t: p.t,
-          h: Math.min(state.H, p.h)
-        }));
-      }
+  UI.initialHeight.max = String(state.H);
 
-      refreshAll();
-    }
+  if (!state.running && state.t === 0 && state.shape !== "reconstruct") {
+    state.h = state.h0;
+    state.history = [{ t: 0, h: state.h0 }];
+  } else if (state.shape !== "reconstruct") {
+    state.h = Math.min(state.H, state.h);
+    state.history = state.history.map(p => ({
+      t: p.t,
+      h: Math.min(state.H, p.h)
+    }));
+  }
 
-    function nextHeight(h, dt){
-      const A = areaAtH(h);
-      const dh = (state.Q / Math.max(A, 0.02)) * dt;
-      return Math.min(state.H, h + dh);
-    }
+  refreshAll();
+}
 
-    function animationLoop(ts){
-      if (!state.running) return;
+function integrateHeightStep(dtTotal){
+  const substeps = 12;
+  const dt = dtTotal / substeps;
 
-      if (state.lastTs == null) state.lastTs = ts;
-      const realDt = Math.min(0.04, (ts - state.lastTs) / 1000);
-      state.lastTs = ts;
+  for (let i = 0; i < substeps; i++) {
+    const A = areaAtH(state.h);
+    const dh = (state.Q / Math.max(A, 0.0001)) * dt;
+    state.h = Math.min(state.H, state.h + dh);
+    state.t += dt;
+  }
+}
 
-      const dt = realDt * state.animSpeed;
+function animationLoop(ts){
+  if (!state.running) return;
 
-      state.t += dt;
-      state.h = nextHeight(state.h, dt);
-      state.pointAccum += dt;
+  if (state.lastTs == null) state.lastTs = ts;
+  const realDt = Math.min(0.035, (ts - state.lastTs) / 1000);
+  state.lastTs = ts;
 
-      if (state.history.length === 0) state.history.push({ t: 0, h: state.h0 });
+  const dt = realDt * state.animSpeed;
 
-      if (state.pointAccum >= 0.06) {
-        state.history.push({ t: state.t, h: state.h });
-        state.pointAccum = 0;
-      } else {
-        state.history[state.history.length - 1] = { t: state.t, h: state.h };
-      }
+  integrateHeightStep(dt);
+  state.pointAccum += dt;
 
-      if (state.h >= state.H) {
-        state.h = state.H;
-        state.running = false;
-        state.lastTs = null;
-        refreshAll();
-        return;
-      }
+  if (state.history.length === 0) state.history.push({ t: 0, h: state.h0 });
 
-      refreshAll();
-      state.rafId = requestAnimationFrame(animationLoop);
-    }
+  if (state.pointAccum >= 0.05) {
+    state.history.push({ t: state.t, h: state.h });
+    state.pointAccum = 0;
+  } else {
+    state.history[state.history.length - 1] = { t: state.t, h: state.h };
+  }
 
-    function startSimulation(){
-      if (state.shape === "reconstruct") return;
-      if (state.shape === "custom" && !state.customProfileReady) {
-        alert("Zeichne zuerst die Hälfte des Gefäßes und übernimm dann das Profil.");
-        return;
-      }
+  if (state.h >= state.H - 1e-8) {
+    state.h = state.H;
+    state.running = false;
+    state.lastTs = null;
+    refreshAll();
+    return;
+  }
 
-      if (state.running) return;
-      state.running = true;
-      state.lastTs = null;
-      state.rafId = requestAnimationFrame(animationLoop);
-    }
+  refreshAll();
+  state.rafId = requestAnimationFrame(animationLoop);
+}
 
-    function pauseSimulation(){
-      state.running = false;
-      state.lastTs = null;
-      if (state.rafId) cancelAnimationFrame(state.rafId);
-    }
+function startSimulation(){
+  if (state.shape === "reconstruct") return;
+  if (state.shape === "custom" && !state.customProfileReady) {
+    alert("Zeichne zuerst die Hälfte des Gefäßes und übernimm dann das Profil.");
+    return;
+  }
 
-    function resetSimulation(){
-      pauseSimulation();
-      state.t = 0;
-      state.h0 = Math.min(parseFloat(UI.initialHeight.value) || 0, state.H);
-      state.h = state.h0;
-      state.history = [{ t: 0, h: state.h0 }];
-      state.pointAccum = 0;
+  if (state.running) return;
+  state.running = true;
+  state.lastTs = null;
+  state.rafId = requestAnimationFrame(animationLoop);
+}
 
-      if (state.shape === "reconstruct") {
-        loadChallenge(state.challenge.index);
-      } else {
-        refreshAll();
-      }
-    }
+function pauseSimulation(){
+  state.running = false;
+  state.lastTs = null;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  refreshAll();
+}
 
-    function setShape(shape){
-      state.shape = shape;
-      UI.activityBtns.forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.shape === shape);
-      });
+function resetSimulation(){
+  pauseSimulation();
+  state.t = 0;
+  state.h0 = Math.min(parseFloat(UI.initialHeight.value) || 0, state.H);
+  state.h = state.h0;
+  state.history = [{ t: 0, h: state.h0 }];
+  state.pointAccum = 0;
 
-      if (shape === "reconstruct") {
-        loadChallenge();
-        return;
-      }
+  if (state.shape === "reconstruct") {
+    loadChallenge(state.challenge.index);
+  } else {
+    refreshAll();
+  }
+}
 
-      state.challenge.score = null;
-      state.challenge.profile = null;
-      state.challenge.showSolution = false;
-      UI.showSolutionBtn.textContent = "Richtiges Gefäß zeigen";
+function setShape(shape){
+  state.shape = shape;
+  UI.activityBtns.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.shape === shape);
+  });
 
-      if (shape !== "custom") {
-        state.draw.enabled = false;
-        state.customProfileReady = false;
-      }
+  if (shape === "reconstruct") {
+    loadChallenge();
+    return;
+  }
 
-      resetSimulation();
-    }
+  state.challenge.score = null;
+  state.challenge.profile = null;
+  state.challenge.showSolution = false;
+  UI.showSolutionBtn.textContent = "Richtiges Gefäß zeigen";
 
-    function startDraw(evt){
-      if (!isUserDrawMode() || !state.draw.enabled || state.customProfileReady) return;
-      evt.preventDefault();
-      state.draw.isDrawing = true;
-      const p = canvasPointerPos(evt);
-      state.draw.points.push(p);
-      redrawCanvas();
-    }
+  if (shape !== "custom") {
+    state.draw.enabled = false;
+    state.customProfileReady = false;
+    state.customRadiiBaseCm = [];
+    state.customRadiiCm = [];
+    state.customWidthCm = null;
+    state.customBaseMaxRadiusCm = null;
+    state.customVisualMaxRadiusCm = null;
+  }
 
-    function moveDraw(evt){
-      if (!state.draw.isDrawing || !isUserDrawMode() || !state.draw.enabled || state.customProfileReady) return;
-      evt.preventDefault();
+  resetSimulation();
+}
 
-      const p = canvasPointerPos(evt);
-      const last = state.draw.points[state.draw.points.length - 1];
-      if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 2) {
-        state.draw.points.push(p);
-        redrawCanvas();
-      }
-    }
+function startDraw(evt){
+  if (!isUserDrawMode() || !state.draw.enabled || state.customProfileReady) return;
+  evt.preventDefault();
+  state.draw.isDrawing = true;
+  const p = canvasPointerPos(evt);
+  state.draw.points.push(p);
+  redrawCanvas();
+}
 
-    function stopDraw(evt){
-      if (evt) evt.preventDefault();
-      state.draw.isDrawing = false;
-    }
+function moveDraw(evt){
+  if (!state.draw.isDrawing || !isUserDrawMode() || !state.draw.enabled || state.customProfileReady) return;
+  evt.preventDefault();
 
-    UI.drawCanvas.addEventListener("pointerdown", startDraw, { passive:false });
-    UI.drawCanvas.addEventListener("pointermove", moveDraw, { passive:false });
-    UI.drawCanvas.addEventListener("pointerup", stopDraw, { passive:false });
-    UI.drawCanvas.addEventListener("pointercancel", stopDraw, { passive:false });
-    UI.drawCanvas.addEventListener("pointerleave", stopDraw, { passive:false });
+  const p = canvasPointerPos(evt);
+  const last = state.draw.points[state.draw.points.length - 1];
+  if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 2) {
+    state.draw.points.push(p);
+    redrawCanvas();
+  }
+}
 
-    UI.widthSlider.addEventListener("input", applyInputs);
-    UI.heightSlider.addEventListener("input", applyInputs);
-    UI.initialHeight.addEventListener("input", applyInputs);
-    UI.flowSlider.addEventListener("input", applyInputs);
-    UI.speedSlider.addEventListener("input", applyInputs);
-    UI.graphMode.addEventListener("change", applyInputs);
+function stopDraw(evt){
+  if (evt) evt.preventDefault();
+  state.draw.isDrawing = false;
+}
 
-    UI.showPoints.addEventListener("change", refreshAll);
-    UI.showLine.addEventListener("change", refreshAll);
-    UI.showGuides.addEventListener("change", refreshAll);
+UI.drawCanvas.addEventListener("pointerdown", startDraw, { passive:false });
+UI.drawCanvas.addEventListener("pointermove", moveDraw, { passive:false });
+UI.drawCanvas.addEventListener("pointerup", stopDraw, { passive:false });
+UI.drawCanvas.addEventListener("pointercancel", stopDraw, { passive:false });
+UI.drawCanvas.addEventListener("pointerleave", stopDraw, { passive:false });
 
-    UI.startBtn.addEventListener("click", startSimulation);
-    UI.pauseBtn.addEventListener("click", pauseSimulation);
-    UI.resetBtn.addEventListener("click", resetSimulation);
+UI.widthSlider.addEventListener("input", applyInputs);
+UI.heightSlider.addEventListener("input", applyInputs);
+UI.initialHeight.addEventListener("input", applyInputs);
+UI.flowSlider.addEventListener("input", applyInputs);
+UI.speedSlider.addEventListener("input", applyInputs);
+UI.graphMode.addEventListener("change", applyInputs);
 
-    UI.activityBtns.forEach(btn => {
-      btn.addEventListener("click", () => setShape(btn.dataset.shape));
-    });
+UI.showPoints.addEventListener("change", refreshAll);
+UI.showLine.addEventListener("change", refreshAll);
+UI.showGuides.addEventListener("change", refreshAll);
+UI.showNumbers.addEventListener("change", applyInputs);
 
-    UI.drawModeBtn.addEventListener("click", enableDrawMode);
-    UI.clearDrawBtn.addEventListener("click", clearDrawing);
-    UI.fitDrawBtn.addEventListener("click", fitCustomVessel);
-    UI.compareBtn.addEventListener("click", compareChallenge);
-    UI.showSolutionBtn.addEventListener("click", toggleShowSolution);
-    UI.newChallengeBtn.addEventListener("click", () => loadChallenge());
+UI.startBtn.addEventListener("click", startSimulation);
+UI.pauseBtn.addEventListener("click", pauseSimulation);
+UI.resetBtn.addEventListener("click", resetSimulation);
 
-    window.addEventListener("resize", () => {
-      resizeDrawCanvas();
-      refreshAll();
-    });
+UI.activityBtns.forEach(btn => {
+  btn.addEventListener("click", () => setShape(btn.dataset.shape));
+});
 
-    applyInputs();
-    resetSimulation();
+UI.drawModeBtn.addEventListener("click", enableDrawMode);
+UI.clearDrawBtn.addEventListener("click", clearDrawing);
+UI.fitDrawBtn.addEventListener("click", fitCustomVessel);
+UI.compareBtn.addEventListener("click", compareChallenge);
+UI.showSolutionBtn.addEventListener("click", toggleShowSolution);
+UI.newChallengeBtn.addEventListener("click", () => loadChallenge());
+
+window.addEventListener("resize", () => {
+  resizeDrawCanvas();
+  refreshAll();
+});
+
+applyInputs();
+resetSimulation();
   </script>
 </body>
 </html>
